@@ -1,1 +1,1 @@
-Forecasting output energi matahari berdasarkan beberapa variabel dengan menggunakan model XGBoost
+https://github.com/Elheims/Eksperimen_SML_Forecasting
