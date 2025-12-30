@@ -1,7 +1,0 @@
-name: Solar_Panel_Forecasting
-
-conda_env: artifacts/conda.yaml
-
-entry_points:
-  main:
-    command: "python artifacts/modelling.py"
