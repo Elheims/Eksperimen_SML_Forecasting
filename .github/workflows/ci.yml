@@ -29,6 +29,6 @@ jobs:
 
       - name: Run MLflow Project
         env:
-          MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
+          MLFLOW_TRACKING_URI: "sqlite:///${{ github.workspace }}/Workflow-CI/mlflow.db"
         run: |
           mlflow run Workflow-CI --env-manager=local
