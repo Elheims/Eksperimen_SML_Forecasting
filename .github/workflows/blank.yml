@@ -1,0 +1,38 @@
+name: MLflow Project
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  mlflow-run:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+
+      - name: Install dependencies
+        run: |
+          pip install mlflow
+          pip install virtualenv
+
+      - name: Run MLflow Project
+        env:
+          MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
+        run: |
+          mlflow run Ekesperimen_SML_Abdu --env-manager=local
+
+      - name: Install Project Requirements
+        run: |
+          pip install -r Ekesperimen_SML_Abdu/artifacts/requirements.txt
+
+      - name: Run MLflow Project
+        run: |
+          mlflow run Ekesperimen_SML_Abdu --env-manager=local
