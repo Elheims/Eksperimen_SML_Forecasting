@@ -1,0 +1,32 @@
+artifact_path: file:C:/Users/LENOVO/Documents/ASAH Proj AI/ML Flow/Submit/Eksperimen_SML_abdufh4/membangun_model/mlruns/3/models/m-d95ab55d781c43b5bcc24929b94bd769/artifacts
+flavors:
+  python_function:
+    data: model.ubj
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.xgboost
+    python_version: 3.13.1
+  xgboost:
+    code: null
+    data: model.ubj
+    model_class: xgboost.sklearn.XGBRegressor
+    model_format: ubj
+    xgb_version: 3.1.2
+is_signature_from_type_hint: false
+mlflow_version: 3.7.0
+model_id: m-d95ab55d781c43b5bcc24929b94bd769
+model_size_bytes: 321603
+model_uuid: m-d95ab55d781c43b5bcc24929b94bd769
+prompts: null
+run_id: 108ec0dd96e946bab3de72d3f8edd6a9
+signature:
+  inputs: '[{"type": "double", "name": "Temp", "required": true}, {"type": "double",
+    "name": "WindSpeed", "required": true}, {"type": "double", "name": "SkyCover",
+    "required": true}, {"type": "double", "name": "Visibility", "required": true},
+    {"type": "double", "name": "Humidity", "required": true}, {"type": "double", "name":
+    "IsDaylight", "required": true}]'
+  outputs: '[{"type": "tensor", "tensor-spec": {"dtype": "float32", "shape": [-1]}}]'
+  params: null
+type_hint_from_example: false
+utc_time_created: '2025-12-29 23:53:21.624425'
