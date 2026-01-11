@@ -14,7 +14,7 @@ Proyek ini mengimplementasikan model pembelajaran mesin untuk meramalkan output 
 
 1. Navigasi ke direktori proyek:
 
-````bash
+    ```bash
     cd Workflow-CI
     ```
 
