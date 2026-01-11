@@ -1,3 +1,75 @@
+# Prediksi Daya Panel Surya
+
+Proyek ini mengimplementasikan model pembelajaran mesin untuk meramalkan output daya panel surya. Proyek ini mencakup validasi menggunakan **Regresi Linier** dan **XGBoost**, dengan penyesuaian hiperparameter lanjutan melalui **Optuna**.
+
+## Fitur
+
+- **Model**: Regresi Linier & Regresi XGBoost.
+- **Pelacakan Eksperimen**: Terintegrasi dengan **MLflow** untuk melacak metrik (RMSE, MAE, R2), parameter, dan artefak.
+- **Penyesuaian Hiperparameter**: Penyesuaian otomatis menggunakan **Optuna** dengan `MLflowCallback` untuk pelacakan real-time.
+- **Visualisasi**: Grafik otomatis (Riwayat Optimasi, Pentingnya Parameter) disimpan ke MLflow.
+- **Dashboard Optuna**: Dashboard interaktif untuk mengeksplorasi hasil penyesuaian.
+
+## Instalasi
+
+1. Navigasi ke direktori proyek:
+
+````bash
+    cd Workflow-CI
+    ```
+
+2. Instal dependensi yang diperlukan:
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+## Penggunaan
+
+### 1. Pelatihan & Penyesuaian
+
+Jalankan skrip utama untuk melatih model dan melakukan penyesuaian hiperparameter Optuna:
+
+```bash
+python modelling.py
+````
+
+Ini akan:
+
+- Melatih model Regresi Linier dasar.
+- Melatih model XGBoost dasar.
+- Menjalankan 50 percobaan optimasi Optuna untuk XGBoost.
+- Mencatat semua hasil ke backend MLflow lokal (`mlflow.db`).
+
+### 2. Melihat Hasil (Antarmuka Pengguna MLflow)
+
+Untuk melihat hasil eksperimen, metrik, dan artefak:
+
+```bash
+mlflow ui
+```
+
+Kemudian buka [http://127.0.0.1:5000](http://127.0.0.1:5000) di browser Anda.
+
+### 3. Dashboard Optuna
+
+Untuk memvisualisasikan pencarian hiperparameter (Parallel Coordinates, Importance, dll.):
+
+```bash
+python run_dashboard.py
+```
+
+Kemudian buka [http://127.0.0.1:8080](http://127.0.0.1:8080) di browser Anda.
+
+## Struktur Proyek
+
+- `modelling.py`: Skrip utama untuk pelatihan dan penyetelan.
+- `requirements.txt`: Ketergantungan Python.
+- `run_dashboard.py`: Peluncur portabel untuk Dashboard Optuna.
+- `mlflow.db`: Database SQLite untuk pelacakan MLflow.
+- `optuna.db`: Database SQLite untuk penyimpanan studi Optuna.
+
+Translated with DeepL.com (free version)
+
 # Solar Panel Power Forecasting
 
 This project implements machine learning models to forecast solar panel power output. It includes validation using both **Linear Regression** and **XGBoost**, with advanced hyperparameter tuning via **Optuna**.
