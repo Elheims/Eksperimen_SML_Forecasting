@@ -1,12 +1,22 @@
+import matplotlib
+matplotlib.use('Agg')
 import pandas as pd
+import numpy
 import mlflow
 import mlflow.sklearn
 import mlflow.xgboost
 from sklearn.linear_model import LinearRegression
 from xgboost import XGBRegressor
-
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+from sklearn.model_selection import train_test_split
+import xgboost as xgb
+import optuna
+from optuna.integration.mlflow import MLflowCallback
+import optuna.visualization.matplotlib as plot_mpl
+import math
 import os
 
+# Check file paths
 try:
     script_dir = os.path.dirname(os.path.abspath(__file__))
     train_path = os.path.join(script_dir, 'data_train_scaled.csv')
@@ -35,7 +45,130 @@ mlflow.set_experiment("Solar_Panel_Forecasting")
 #XGBOOST
 mlflow.xgboost.autolog(log_models=True)
 
-with mlflow.start_run(run_name="XGBoost_Autolog"):
+with mlflow.start_run(run_name="XGBoost_Untuned"):
     xgb_model = XGBRegressor(n_estimators=100, learning_rate=0.1, random_state=67)
     
     xgb_model.fit(X_train, y_train, eval_set=[(X_test, y_test)], verbose=False)
+    mlflow.xgboost.log_model(xgb_model, name="model")
+
+
+# Linear Regression
+mlflow.sklearn.autolog(log_models=False)
+
+with mlflow.start_run(run_name="LinearRegression"):
+    lr_model = LinearRegression()
+    lr_model.fit(X_train, y_train)
+    mlflow.sklearn.log_model(lr_model, name="model")
+    
+    # Evaluate on Test/Validation Set
+    y_pred = lr_model.predict(X_test)
+    
+    mse = mean_squared_error(y_test, y_pred)
+    rmse = math.sqrt(mse)
+    mae = mean_absolute_error(y_test, y_pred)
+    r2 = r2_score(y_test, y_pred)
+    
+    print(f"Linear Regression Test Metrics: RMSE={rmse:.4f}, MAE={mae:.4f}, R2={r2:.4f}")
+    
+    mlflow.log_metric("eval_rmse", rmse)
+    mlflow.log_metric("eval_mae", mae)
+    mlflow.log_metric("eval_r2", r2)
+
+
+# XGBOOST Tuned with Optuna
+mlflow.xgboost.autolog(disable=True)
+
+with mlflow.start_run(run_name="XGBoost_Option_Tune"):
+    
+    X_train_opt, X_val, y_train_opt, y_val = train_test_split(X_train, y_train, test_size=0.2, random_state=42)
+    
+    def objective(trial):
+        params = {
+            'n_estimators': trial.suggest_int("n_estimators", 100, 1000),
+            'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.3, log=True),
+            'max_depth': trial.suggest_int('max_depth', 3, 10),
+            'min_child_weight': trial.suggest_int('min_child_weight', 1, 10),
+            'subsample': trial.suggest_float('subsample', 0.5, 1.0),
+            'colsample_bytree': trial.suggest_float('colsample_bytree', 0.5, 1.0),
+        }
+        
+        model = xgb.XGBRegressor(**params, early_stopping_rounds=50)
+        
+        model.fit(
+            X_train_opt, y_train_opt,
+            eval_set=[(X_val, y_val)],
+            verbose=False
+        )
+        
+        preds = model.predict(X_val)
+        return math.sqrt(mean_squared_error(y_val, preds))
+
+    print("Starting Optuna Hyperparameter Tuning...")
+    
+    # Setup MLflow Callback
+    mlflow_callback = MLflowCallback(
+        tracking_uri=mlflow.get_tracking_uri(),
+        metric_name="rmse",
+        mlflow_kwargs={"nested": True}
+    )
+    
+    # Run the optimization
+    storage_name = "sqlite:///{}/optuna.db".format(script_dir)
+    study = optuna.create_study(direction='minimize', storage=storage_name, study_name="xgboost_optuna", load_if_exists=True)
+    study.optimize(objective, n_trials=50, callbacks=[mlflow_callback])
+
+    print("Best params:", study.best_params)
+    print("Best CV RMSE:", study.best_value)
+    
+    mlflow.log_params(study.best_params)
+    mlflow.log_metric("best_cv_rmse", study.best_value)
+    
+    # Visualizations
+    try:
+        # Plot optimization history
+        ax_history = plot_mpl.plot_optimization_history(study)
+        if isinstance(ax_history, matplotlib.axes.Axes):
+            fig_history = ax_history.get_figure()
+        else:
+            fig_history = ax_history
+        mlflow.log_figure(fig_history, "optimization_history.png")
+        
+        # Plot param importances
+        ax_importance = plot_mpl.plot_param_importances(study)
+        if isinstance(ax_importance, matplotlib.axes.Axes):
+            fig_importance = ax_importance.get_figure()
+        else:
+            fig_importance = ax_importance
+        mlflow.log_figure(fig_importance, "param_importances.png")
+        
+        # Plot slice
+        ax_slice = plot_mpl.plot_slice(study)
+        if isinstance(ax_slice, matplotlib.axes.Axes):
+            fig_slice = ax_slice.get_figure()
+        elif isinstance(ax_slice, numpy.ndarray):
+             fig_slice = ax_slice.flatten()[0].get_figure()
+        else:
+            fig_slice = ax_slice
+        mlflow.log_figure(fig_slice, "slice_plot.png")
+    
+    except Exception as e:
+        print(f"Vizualization failed: {e}")
+
+    
+    # Train best model
+    best_params = study.best_params
+    best_model = xgb.XGBRegressor(**best_params)
+    best_model.fit(X_train, y_train, eval_set=[(X_test, y_test)], verbose=False) # Evaluate 
+    # Evaluate
+    y_pred_tune = best_model.predict(X_test)
+    rmse_tune = math.sqrt(mean_squared_error(y_test, y_pred_tune))
+    mae_tune = mean_absolute_error(y_test, y_pred_tune)
+    r2_tune = r2_score(y_test, y_pred_tune)
+    
+    mlflow.log_metric("eval_rmse", rmse_tune)
+    mlflow.log_metric("eval_mae", mae_tune)
+    mlflow.log_metric("eval_r2", r2_tune)
+    
+    print(f"Tuned XGBoost (Optuna) Test Metrics: RMSE={rmse_tune:.4f}, MAE={mae_tune:.4f}, R2={r2_tune:.4f}")
+    
+    mlflow.xgboost.log_model(best_model, name="model")
