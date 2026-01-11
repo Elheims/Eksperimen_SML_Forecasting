@@ -1,5 +1,6 @@
 import matplotlib
 matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 import pandas as pd
 import numpy
 import mlflow
@@ -15,6 +16,37 @@ from optuna.integration.mlflow import MLflowCallback
 import optuna.visualization.matplotlib as plot_mpl
 import math
 import os
+
+def plot_actual_vs_predicted(y_true, y_pred, title):
+    # Ensure inputs are numpy arrays for consistent slicing
+    if hasattr(y_true, 'values'):
+        y_true = y_true.values
+        
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
+    
+    # Line Chart (100 samples) 
+    limit = 100
+    ax1.plot(range(len(y_true[:limit])), y_true[:limit], label='Actual', color='blue', alpha=0.7)
+    ax1.plot(range(len(y_pred[:limit])), y_pred[:limit], label='Predicted', color='red', alpha=0.7, linestyle='--')
+    ax1.set_title(f'{title} - Actual vs Predicted (First {limit} Samples)')
+    ax1.set_xlabel('Sample Index')
+    ax1.set_ylabel('Power Output')
+    ax1.legend()
+    ax1.grid(True)
+    
+    # Scatter Plot for overall correlation
+    ax2.scatter(y_true, y_pred, alpha=0.5)
+    min_val = min(min(y_true), min(y_pred))
+    max_val = max(max(y_true), max(y_pred))
+    ax2.plot([min_val, max_val], [min_val, max_val], 'r--', label='Perfect Fit')
+    ax2.set_title(f'{title} - Scatter Plot')
+    ax2.set_xlabel('Actual')
+    ax2.set_ylabel('Predicted')
+    ax2.legend()
+    ax2.grid(True)
+    
+    plt.tight_layout()
+    return fig
 
 # Check file paths
 try:
@@ -50,6 +82,11 @@ with mlflow.start_run(run_name="XGBoost_Untuned"):
     
     xgb_model.fit(X_train, y_train, eval_set=[(X_test, y_test)], verbose=False)
     mlflow.xgboost.log_model(xgb_model, name="model")
+    #Log Prediction Plot
+    xgb_preds = xgb_model.predict(X_test)
+    fig_xgb = plot_actual_vs_predicted(y_test, xgb_preds, "Untuned XGBoost")
+    mlflow.log_figure(fig_xgb, "xgboost_untuned_actual_vs_predicted.png")
+    plt.close(fig_xgb)
 
 
 # Linear Regression
@@ -73,6 +110,11 @@ with mlflow.start_run(run_name="LinearRegression"):
     mlflow.log_metric("eval_rmse", rmse)
     mlflow.log_metric("eval_mae", mae)
     mlflow.log_metric("eval_r2", r2)
+    
+    # Log Prediction Plot
+    fig_lr = plot_actual_vs_predicted(y_test, y_pred, "Linear Regression")
+    mlflow.log_figure(fig_lr, "linear_regression_actual_vs_predicted.png")
+    plt.close(fig_lr)
 
 
 # XGBOOST Tuned with Optuna
@@ -168,6 +210,11 @@ with mlflow.start_run(run_name="XGBoost_Option_Tune"):
     mlflow.log_metric("eval_rmse", rmse_tune)
     mlflow.log_metric("eval_mae", mae_tune)
     mlflow.log_metric("eval_r2", r2_tune)
+    
+    # Log Prediction Plot
+    fig_xgb = plot_actual_vs_predicted(y_test, y_pred_tune, "Tuned XGBoost")
+    mlflow.log_figure(fig_xgb, "xgboost_actual_vs_predicted.png")
+    plt.close(fig_xgb)
     
     print(f"Tuned XGBoost (Optuna) Test Metrics: RMSE={rmse_tune:.4f}, MAE={mae_tune:.4f}, R2={r2_tune:.4f}")
     

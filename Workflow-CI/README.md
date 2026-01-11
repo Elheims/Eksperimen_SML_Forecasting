@@ -14,14 +14,14 @@ Proyek ini mengimplementasikan model pembelajaran mesin untuk meramalkan output 
 
 1. Navigasi ke direktori proyek:
 
-    ```bash
-    cd Workflow-CI
-    ```
+   ```bash
+   cd Workflow-CI
+   ```
 
 2. Instal dependensi yang diperlukan:
-    ```bash
-    pip install -r requirements.txt
-    ```
+   ```bash
+   pip install -r requirements.txt
+   ```
 
 ## Penggunaan
 
@@ -31,7 +31,7 @@ Jalankan skrip utama untuk melatih model dan melakukan penyesuaian hiperparamete
 
 ```bash
 python modelling.py
-````
+```
 
 Ini akan:
 
@@ -49,6 +49,17 @@ mlflow ui
 ```
 
 Kemudian buka [http://127.0.0.1:5000](http://127.0.0.1:5000) di browser Anda.
+
+**Untuk Melihat Plot Prediksi (Aktual vs Prediksi):**
+
+1.  Klik nama run eksperimen (contoh: `XGBoost_Option_Tune` atau `LinearRegression`).
+2.  Klik tab **"Artifacts"**.
+3.  Cari file gambar berikut:
+    - `linear_regression_actual_vs_predicted.png`
+    - `xgboost_untuned_actual_vs_predicted.png`
+    - `xgboost_actual_vs_predicted.png`
+
+Ini akan menampilkan perbandingan visual antara prediksi model dan data aktual.
 
 ### 3. Dashboard Optuna
 
@@ -121,6 +132,17 @@ mlflow ui
 ```
 
 Then open [http://127.0.0.1:5000](http://127.0.0.1:5000) in your browser.
+
+**To View Prediction Plots (Actual vs Predicted):**
+
+1.  Click on the experiment run name (e.g., `XGBoost_Option_Tune` or `LinearRegression`).
+2.  Click the **"Artifacts"** tab.
+3.  Looks for the following image files:
+    - `linear_regression_actual_vs_predicted.png`
+    - `xgboost_untuned_actual_vs_predicted.png`
+    - `xgboost_actual_vs_predicted.png`
+
+These plots provide a visual comparison between model predictions and actual data.
 
 ### 3. Optuna Dashboard
 
