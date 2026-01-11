@@ -1,6 +1,6 @@
 # Prediksi Daya Panel Surya
 
-Proyek ini mengimplementasikan model pembelajaran mesin untuk meramalkan output daya panel surya. Proyek ini mencakup validasi menggunakan **Regresi Linier** dan **XGBoost**, dengan penyesuaian hiperparameter lanjutan melalui **Optuna**.
+Proyek ini mengimplementasikan model pembelajaran mesin untuk memprediksi output daya panel surya. Proyek ini menggunakan model **Regresi Linier** dan **XGBoost**, dengan penyesuaian hiperparameter lanjutan melalui **Optuna**.
 
 ## Fitur
 
