@@ -84,6 +84,18 @@ with mlflow.start_run(run_name="XGBoost_Untuned"):
     mlflow.xgboost.log_model(xgb_model, name="model")
     #Log Prediction Plot
     xgb_preds = xgb_model.predict(X_test)
+    
+    # Calculate Metrics for Untuned XGBoost
+    rmse_untuned = math.sqrt(mean_squared_error(y_test, xgb_preds))
+    mae_untuned = mean_absolute_error(y_test, xgb_preds)
+    r2_untuned = r2_score(y_test, xgb_preds)
+    
+    print(f"Untuned XGBoost Test Metrics: RMSE={rmse_untuned:.4f}, MAE={mae_untuned:.4f}, R2={r2_untuned:.4f}")
+    
+    mlflow.log_metric("eval_rmse", rmse_untuned)
+    mlflow.log_metric("eval_mae", mae_untuned)
+    mlflow.log_metric("eval_r2", r2_untuned)
+
     fig_xgb = plot_actual_vs_predicted(y_test, xgb_preds, "Untuned XGBoost")
     mlflow.log_figure(fig_xgb, "xgboost_untuned_actual_vs_predicted.png")
     plt.close(fig_xgb)
@@ -122,7 +134,7 @@ mlflow.xgboost.autolog(disable=True)
 
 with mlflow.start_run(run_name="XGBoost_Option_Tune"):
     
-    X_train_opt, X_val, y_train_opt, y_val = train_test_split(X_train, y_train, test_size=0.2, random_state=42)
+    X_train_opt, X_val, y_train_opt, y_val = train_test_split(X_train, y_train, test_size=0.2, random_state=62)
     
     def objective(trial):
         params = {
@@ -157,7 +169,7 @@ with mlflow.start_run(run_name="XGBoost_Option_Tune"):
     # Run the optimization
     storage_name = "sqlite:///{}/optuna.db".format(script_dir)
     study = optuna.create_study(direction='minimize', storage=storage_name, study_name="xgboost_optuna", load_if_exists=True)
-    study.optimize(objective, n_trials=50, callbacks=[mlflow_callback])
+    study.optimize(objective, n_trials=200, callbacks=[mlflow_callback])
 
     print("Best params:", study.best_params)
     print("Best CV RMSE:", study.best_value)
@@ -219,3 +231,28 @@ with mlflow.start_run(run_name="XGBoost_Option_Tune"):
     print(f"Tuned XGBoost (Optuna) Test Metrics: RMSE={rmse_tune:.4f}, MAE={mae_tune:.4f}, R2={r2_tune:.4f}")
     
     mlflow.xgboost.log_model(best_model, name="model")
+
+# ==========================================
+# FINAL EVALUATION TABLE
+# ==========================================
+print("\n" + "="*30)
+print("FINAL MODEL EVALUATION")
+print("="*30)
+
+results = {
+    'Model': ['Linear Regression', 'XGBoost (Untuned)', 'XGBoost (Tuned)'],
+    'RMSE': [rmse, rmse_untuned, rmse_tune],
+    'MAE': [mae, mae_untuned, mae_tune],
+    'R2 Score': [r2, r2_untuned, r2_tune]
+}
+
+df_results = pd.DataFrame(results)
+try:
+    print(df_results.to_markdown(index=False, floatfmt=".4f"))
+except ImportError:
+    print(df_results.to_string(index=False, float_format="%.4f"))
+
+# Optional: Log results table to MLflow
+with mlflow.start_run(run_name="Final_Evaluation_Summary"):
+    df_results.to_csv("final_evaluation_results.csv", index=False)
+    mlflow.log_artifact("final_evaluation_results.csv")
